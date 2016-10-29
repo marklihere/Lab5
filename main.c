@@ -130,13 +130,13 @@ void TIMER1A_Handler(void) {
   // 2.19726563 microseconds
 	// so our desired timeout value = incremental timer value * adcsampleaverage
 
-	temp = adcsamples / 250 * 2.19726563;
+	temp = (adcsamples / 250.0) * 4.394512;
 
 	adcsamples = 0;  // reset our running total for next 250 samples
 
 // Update Timer C
 	TIMER2->CTL = 0x00000000; // disable while configuring
-	TIMER2->TAILR = temp + 80000;  // 80000 cycles = 1ms at 80 Mhz
+	TIMER2->TAILR = temp + 2000;  // 80000 cycles = 1ms at 80 Mhz
 	TIMER2->IMR = 0x00000001; // enable interrupt
 	TIMER2->CTL = 0x00000001; // enable while configuring
 }
@@ -148,14 +148,15 @@ void TIMER2A_Handler(void) {
 	// clear timer interrupt
 	TIMER2->ICR = 0x00000001;
   // Get next value of Sine array
-	
+	while(I2C0->MCS_I2C0_ALT & 0x00000001) {};
 	// address of DAC is 0x62 = 01100010
 	I2C0->MSA = 0x62 << 1;     // LSB = 0 means Master writes
+	//I2C0->MDR = 0xFF;
 	I2C0->MDR = (sine_array[i%40] >> 8)&0xFF;
 	I2C0->MCS = 0x00000003;    // Start and Run 	
   while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
-	I2C0->MDR = sine_array[i%40] & 0x0F;
-	I2C0->MCS = 4;             // Stop 
+	I2C0->MDR = sine_array[i%40] & 0xFF;
+	I2C0->MCS = 5;             // Stop 
 	while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
 	
 	i++;
@@ -170,12 +171,13 @@ void INIT_I2C(void){
 	SYSCTL->RCGCI2C |= 0x0001;   // activate I2C0
 	SYSCTL->RCGCGPIO |= 0x0002;  // activate port B
 	while((SYSCTL->PRGPIO&0x0002) == 0){};  // ready?
-	GPIOB->AFSEL |= 0x0C;          // enable alt func on PB2, 3
+	GPIOB->AFSEL |= 0x0C;       // enable alt func on PB2, 3 
+	GPIOB->DEN |= 0x0C; 		    // enable digital I/O on PB2,3
 		GPIOB->ODR |= 0x08;          // enable open drain PB3, i2c0 SDA
-		GPIOB->DIR |= 0x0C;          // outputs for PB2, 3
-		GPIOB->PUR |= 0x04;          // Pull-up on PB2, i2c0 SCL
+		//GPIOB->DIR |= 0x0C;          // outputs for PB2, 3
+		//GPIOB->PUR |= 0x04;          // Pull-up on PB2, i2c0 SCL
 		GPIOB->PCTL = (GPIOB->PCTL&0xFFFF00FF) + 0x00003300;  // I2C
-		GPIOB->DEN |= 0x0C;        // enable digital I/O on PB2,3
+		       
 		I2C0->MCR = 0x00000010;    // master function enable
 		I2C0->MTPR = TPR;          // cfg for 400 kbps fast clock
 }
