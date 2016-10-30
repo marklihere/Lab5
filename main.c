@@ -130,7 +130,7 @@ void TIMER1A_Handler(void) {
   // 2.19726563 microseconds
 	// so our desired timeout value = incremental timer value * adcsampleaverage
 
-	temp = (adcsamples / 250.0) * 4.7;
+	temp = (adcsamples / 250.0) * 4.39560439560439;
 
 	adcsamples = 0;  // reset our running total for next 250 samples
 
@@ -156,10 +156,10 @@ void TIMER2A_Handler(void) {
 	
 	// address of DAC is 0x62 = 01100010
 	I2C0->MSA = 0x62 << 1;     // LSB = 0 means Master writes
-	I2C0->MDR = (sine_array[10] >> 8)&0xFF;
+	I2C0->MDR = (sine_array[i%40] >> 8)&0x0F;
 	I2C0->MCS = 0x00000003;    // Start and Run 	
   while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
-	I2C0->MDR = sine_array[10] & 0x0F;
+	I2C0->MDR = sine_array[i%40] & 0xFF;
 	I2C0->MCS = 5;             // Stop 
 	while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
 	
@@ -188,8 +188,8 @@ void TIMER2A_Handler(void) {
 void INIT_I2C(void){
 // We want I2C Frequencey of 400 kHz (fast mode), so 400 kbps
 // TPR = (System Clock/(2*(SCL_LP + SCL_HP)*SCL_CLK))-1;
-// TPR = (80 MHz / (2*(6 + 4) * 400000)) - 1 = 9
-	#define TPR 0x03
+// TPR = (80 MHz / (2*(6 + 4) * 1200000)) - 1 = 9
+	#define TPR 9
 	SYSCTL->RCGCI2C |= 0x0001;   // activate I2C0
 	SYSCTL->RCGCGPIO |= 0x0002;  // activate port B
 	while((SYSCTL->PRGPIO&0x0002) == 0){};  // ready?

@@ -1,7 +1,0 @@
-image filenames - ADC output values
-02 - 0
-03 - 1023
-04 - 2047
-05 - 3071
-06 - 4095
-08 - 4096 with working probe - showing voltage swing
