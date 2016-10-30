@@ -130,7 +130,7 @@ void TIMER1A_Handler(void) {
   // 2.19726563 microseconds
 	// so our desired timeout value = incremental timer value * adcsampleaverage
 
-	temp = (adcsamples / 250.0) * 4.394512;
+	temp = (adcsamples / 250.0) * 4.7;
 
 	adcsamples = 0;  // reset our running total for next 250 samples
 
@@ -148,18 +148,40 @@ void TIMER2A_Handler(void) {
 	// clear timer interrupt
 	TIMER2->ICR = 0x00000001;
   // Get next value of Sine array
-	while(I2C0->MCS_I2C0_ALT & 0x00000001) {};
+	
+  // send master code for high speed at fast mode speed
+	//I2C0->MSA = 0x09;
+	
+  // Get next value of Sine array
+	
 	// address of DAC is 0x62 = 01100010
 	I2C0->MSA = 0x62 << 1;     // LSB = 0 means Master writes
-	//I2C0->MDR = 0xFF;
-	I2C0->MDR = (sine_array[i%40] >> 8)&0xFF;
+	I2C0->MDR = (sine_array[10] >> 8)&0xFF;
 	I2C0->MCS = 0x00000003;    // Start and Run 	
+  while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
+	I2C0->MDR = sine_array[10] & 0x0F;
+	I2C0->MCS = 5;             // Stop 
+	while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
+	
+	i++;
+/*	while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait	
+	//I2C0->MTPR = 0x03;  // set timer period for high-speed mode  ??
+
+	// address of DAC is 0x62 = 01100010
+	I2C0->MSA = 0x09;     // LSB = 0 means Master writes
+	I2C0->MCS = 0x00000013;    // Start and Run 	and start high-speed mode
+
+  while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
+  I2C0->MSA = 0x62 << 1;     // LSB = 0 means Master writes
+	I2C0->MDR = (sine_array[i%40] >> 8)&0xFF;
+  I2C0->MCS = 0x00000003;    // Start and Run 
+
   while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
 	I2C0->MDR = sine_array[i%40] & 0xFF;
 	I2C0->MCS = 5;             // Stop 
 	while(I2C0->MCS_I2C0_ALT & 0x00000001) {};  //wait
 	
-	i++;
+	i++;*/
 }
 	
 // Initialize I2C
@@ -167,7 +189,7 @@ void INIT_I2C(void){
 // We want I2C Frequencey of 400 kHz (fast mode), so 400 kbps
 // TPR = (System Clock/(2*(SCL_LP + SCL_HP)*SCL_CLK))-1;
 // TPR = (80 MHz / (2*(6 + 4) * 400000)) - 1 = 9
-	#define TPR 9
+	#define TPR 0x03
 	SYSCTL->RCGCI2C |= 0x0001;   // activate I2C0
 	SYSCTL->RCGCGPIO |= 0x0002;  // activate port B
 	while((SYSCTL->PRGPIO&0x0002) == 0){};  // ready?
@@ -179,7 +201,8 @@ void INIT_I2C(void){
 		GPIOB->PCTL = (GPIOB->PCTL&0xFFFF00FF) + 0x00003300;  // I2C
 		       
 		I2C0->MCR = 0x00000010;    // master function enable
-		I2C0->MTPR = TPR;          // cfg for 400 kbps fast clock
+		I2C0->MTPR = TPR;          // cfg for 3.3 Mbps fast clock
+		
 }
 
 
