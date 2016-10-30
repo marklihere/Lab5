@@ -1,0 +1,8 @@
+09 - showing I2C Tx @our max 286Hz rate - I2C limits highest freq
+10 - highest freq from potentiometer
+11 - lowest freq from potentiometer
+12 - highest freq (set ADC_out = 0)
+13 - freq (set ADC_out = 1023, still limited by I2C)
+14 - freq (set ADC_out = 2047)
+15 - freq (set ADC_out = 3071)
+16 - lowest freq (set ADC_out = 4095)
